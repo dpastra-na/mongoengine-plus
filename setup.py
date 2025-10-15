@@ -12,7 +12,7 @@ with open('README.md', 'r') as f:
 
 
 setup(
-    name='mongoengine-plus',
+    name='mongoengine-plus-pymongo-4',
     version=version.__version__,
     author='Cuenca',
     author_email='dev@cuenca.com',
