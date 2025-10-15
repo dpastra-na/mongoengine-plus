@@ -75,6 +75,7 @@ def setup_encrypted_string_data_key(
         'test',
         'test',
         'us-east-1',
+        kms_tls_options={'aws': {'tlsCAFile': 'tests/localhost.crt'}},
     )
 
     db_name, key_coll = EncryptedStringField.key_namespace.split(".", 1)
@@ -88,6 +89,7 @@ def setup_encrypted_string_data_key(
         'thekey',
         kms_connection_url,
         'us-east-1',
+        kms_tls_options={'aws': {'tlsCAFile': 'tests/localhost.crt'}},
     )
     yield
     key_vault.drop()

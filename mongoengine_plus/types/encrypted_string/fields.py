@@ -1,4 +1,4 @@
-from typing import Any, ClassVar, Dict
+from typing import Any, ClassVar, Dict, Optional
 
 from bson.binary import STANDARD
 from bson.codec_options import CodecOptions
@@ -23,6 +23,7 @@ class EncryptedStringField(BaseField):
     _aws_access_key_id: ClassVar[str]
     _aws_secret_access_key: ClassVar[str]
     aws_region_name: ClassVar[str]
+    kms_tls_options: ClassVar[Optional[Dict[str, Any]]] = None
 
     algorithm: Algorithm
 
@@ -38,12 +39,14 @@ class EncryptedStringField(BaseField):
         aws_access_key_id: str,
         aws_secret_access_key: str,
         aws_region_name: str,
+        kms_tls_options: Optional[Dict[str, Any]] = None,
     ) -> None:
         cls.key_namespace = key_namespace
         cls.key_name = key_name
         cls._aws_access_key_id = aws_access_key_id
         cls._aws_secret_access_key = aws_secret_access_key
         cls.aws_region_name = aws_region_name
+        cls.kms_tls_options = kms_tls_options
         cls.kms_provider = dict(
             aws=dict(
                 accessKeyId=aws_access_key_id,
@@ -58,7 +61,11 @@ class EncryptedStringField(BaseField):
         connection = get_connection()
 
         with ClientEncryption(
-            self.kms_provider, self.key_namespace, connection, CODEC_OPTION
+            self.kms_provider,
+            self.key_namespace,
+            connection,
+            CODEC_OPTION,
+            kms_tls_options=self.kms_tls_options,
         ) as client_encryption:
             return client_encryption.decrypt(value)
 
@@ -67,7 +74,11 @@ class EncryptedStringField(BaseField):
         data_key = get_data_key_binary(self.key_namespace, self.key_name)
 
         with ClientEncryption(
-            self.kms_provider, self.key_namespace, connection, CODEC_OPTION
+            self.kms_provider,
+            self.key_namespace,
+            connection,
+            CODEC_OPTION,
+            kms_tls_options=self.kms_tls_options,
         ) as client_encryption:
             return client_encryption.encrypt(value, self.algorithm, data_key)
 

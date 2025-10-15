@@ -6,7 +6,8 @@ import pytest
 from bson import Binary
 from mongoengine import Document, StringField
 from pymongo import MongoClient
-from pymongo.encryption import Algorithm, ClientEncryption, _EncryptionIO
+from pymongo.encryption import Algorithm, ClientEncryption
+from pymongo.synchronous.encryption import _EncryptionIO
 
 from mongoengine_plus.models import uuid_field
 from mongoengine_plus.types import EncryptedStringField
@@ -55,7 +56,7 @@ def test_configure_encrypted_string():
 
 def test_get_data_key_not_found() -> None:
     with pytest.raises(NoDataKeyFound):
-        get_data_key('foo.bar', 'thekey')
+        get_data_key("foo.bar", "thekey")
 
 
 def test_create_data_key(
@@ -80,6 +81,7 @@ def test_create_data_key(
         key_name,
         kms_connection_url,
         kms_region_name,
+        kms_tls_options={'aws': {'tlsCAFile': 'tests/localhost.crt'}},
     )
     data_key = db_connection[db_name][collection_name].find_one(
         ({"keyAltNames": key_name})
@@ -118,10 +120,11 @@ def test_encrypted_string_on_saving_and_reading(
         EncryptedStringField.key_namespace,
         client,
         CODEC_OPTION,
+        kms_tls_options=EncryptedStringField.kms_tls_options,
     ) as client_encryption:
         # The ClientEncryption object should be able to decrypt the encrypted
         # value stored in MongoDB
-        assert client_encryption.decrypt(user_dict['ssn']) == user.ssn
+        assert client_encryption.decrypt(user_dict["ssn"]) == user.ssn
 
 
 @pytest.mark.usefixtures('setup_encrypted_string_data_key')

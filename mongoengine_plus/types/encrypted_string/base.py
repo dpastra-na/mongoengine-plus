@@ -1,5 +1,5 @@
 from functools import lru_cache
-from typing import Dict
+from typing import Dict, Optional
 
 from bson import CodecOptions
 from bson.binary import STANDARD, UUID_SUBTYPE, Binary
@@ -32,6 +32,10 @@ def get_data_key_binary(key_namespace: str, key_name: str) -> Binary:
     # Buscamos el data key
     data_key = get_data_key(key_namespace, key_name)
     uuid_data_key = data_key['_id']
+    # In PyMongo 4.x, the _id field is already a Binary object
+    if isinstance(uuid_data_key, Binary):
+        return uuid_data_key
+    # For backward compatibility with PyMongo 3.x
     return Binary(uuid_data_key.bytes, UUID_SUBTYPE)
 
 
@@ -42,6 +46,7 @@ def create_data_key(
     key_name: str,
     kms_connection_url: str,
     kms_region_name: str,
+    kms_tls_options: Optional[Dict] = None,
 ) -> None:
     connection = get_connection()
     db_name, collection_name = key_namespace.split(".", 1)
@@ -57,6 +62,7 @@ def create_data_key(
         key_namespace,
         connection,
         CodecOptions(uuid_representation=STANDARD),
+        kms_tls_options=kms_tls_options,
     ) as client_encryption:
         client_encryption.create_data_key(
             'aws',
